@@ -10,6 +10,10 @@ INC_DIR     = inc
 SRC_FILES   = main.c \
 			  network_factory.c \
 			  dns.c \
+			  request.c \
+			  receiver.c \
+			  probes.c \
+			  utils.c \
 
 
 OBJ_FILES   = $(SRC_FILES:%.c=$(OBJ_DIR)/%.o)
