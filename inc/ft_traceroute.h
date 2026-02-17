@@ -38,8 +38,7 @@ typedef struct s_traceroute {
     uint16_t           pid;
 } t_traceroute;
 
-/*
-** PROTOTYPES
-*/
+int resolve_dns(const char *host, struct sockaddr_in *dest);
+int setup_socket(t_traceroute *tr);
 
 #endif
