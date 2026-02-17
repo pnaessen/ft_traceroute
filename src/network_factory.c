@@ -1,18 +1,5 @@
 #include "ft_traceroute.h"
 
-void init_ping_struct(t_ping *ping)
-{
-    memset(ping, 0, sizeof(t_ping));
-    ping->target_host = NULL;
-    ping->stats.min_rtt = DBL_MAX;
-    ping->stats.max_rtt = 0.0;
-
-    ping->ttl = 64;
-    ping->verbose = false;
-    ping->count = -1;
-    ping->type = ICMP_ECHO;
-}
-
 int setup_socket(t_ping *ping)
 {
     struct timeval tv = {1, 0};

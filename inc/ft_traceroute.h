@@ -21,12 +21,21 @@
 #define ERR_DNS -1
 #define ERR_SOCKET -2
 
-/*
-** STRUCTURES
-*/
+typedef struct s_probe {
+    struct sockaddr_in addr;
+    double             rtt;
+    int                type;
+    int                got_reply;
+} t_probe;
 
 typedef struct s_traceroute {
-
+    int                sockfd;
+    struct sockaddr_in dest_addr;
+    char               *hostname;
+    int                ttl;
+    int                max_hops;
+    int                probes_per_hop;
+    uint16_t           pid;
 } t_traceroute;
 
 /*
