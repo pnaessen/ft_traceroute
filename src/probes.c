@@ -1,9 +1,10 @@
 #include "ft_traceroute.h"
 
+
 static t_probe_result perform_one_probe(t_traceroute *tr, int seq)
 {
-    t_probe_result result;
-    double start_time;
+    t_probe_result  result;
+    double          start_time;
 
     memset(&result, 0, sizeof(result));
 
@@ -11,13 +12,12 @@ static t_probe_result perform_one_probe(t_traceroute *tr, int seq)
 
     send_icmp_packet(tr, seq);
 
-    receive_packet(tr, &result);
+    receive_packet(tr, &result, seq);
 
     if (result.got_reply) {
-	result.rtt = (get_time_now() - start_time) * 1000.0;
-
-	if (result.type == ICMP_ECHOREPLY || result.type == ICMP_DEST_UNREACH)
-	    result.is_final = true;
+        result.rtt = (get_time_now() - start_time) * 1000.0;
+        if (result.type == ICMP_ECHOREPLY || result.type == ICMP_DEST_UNREACH)
+            result.is_final = true;
     }
 
     return result;

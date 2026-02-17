@@ -16,7 +16,7 @@ static void resolve_info(t_traceroute *tr, struct sockaddr_in *addr, t_probe_res
     }
 }
 
-void receive_packet(t_traceroute *tr, t_probe_result *res)
+void receive_packet(t_traceroute *tr, t_probe_result *res, int expected_seq)
 {
     char buffer[512];
     struct sockaddr_in from;
@@ -27,44 +27,36 @@ void receive_packet(t_traceroute *tr, t_probe_result *res)
 
     res->got_reply = false;
 
-    ret = recvfrom(tr->sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)&from, &from_len);
+    while (true) {
+	ret = recvfrom(tr->sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)&from, &from_len);
 
-    if (ret < 0) {
-	return;
-    }
+	if (ret < 0)
+	    return;
 
-    ip = (struct iphdr *)buffer;
-    icmp = (struct icmphdr *)(buffer + (ip->ihl * 4));
+	ip = (struct iphdr *)buffer;
+	icmp = (struct icmphdr *)(buffer + (ip->ihl * 4));
 
-    if (icmp->type == ICMP_ECHOREPLY) {
-	if (ntohs(icmp->un.echo.id) == tr->pid && ntohs(icmp->un.echo.sequence) == res->code) {
-	    if (ntohs(icmp->un.echo.id) == tr->pid) {
+	if (icmp->type == ICMP_ECHOREPLY) {
+	    if (ntohs(icmp->un.echo.id) == tr->pid &&
+		ntohs(icmp->un.echo.sequence) == expected_seq) {
 		res->got_reply = true;
 		res->type = icmp->type;
 		res->code = icmp->code;
+		resolve_info(tr, &from, res);
+		return;
+	    }
+	} else if (icmp->type == ICMP_TIME_EXCEEDED || icmp->type == ICMP_DEST_UNREACH) {
+	    struct iphdr *inner_ip = (struct iphdr *)(buffer + (ip->ihl * 4) + 8);
+	    struct icmphdr *inner_icmp = (struct icmphdr *)((char *)inner_ip + (inner_ip->ihl * 4));
+
+	    if (ntohs(inner_icmp->un.echo.id) == tr->pid &&
+		ntohs(inner_icmp->un.echo.sequence) == expected_seq) {
+		res->got_reply = true;
+		res->type = icmp->type;
+		res->code = icmp->code;
+		resolve_info(tr, &from, res);
+		return;
 	    }
 	}
-    } else if (icmp->type == ICMP_TIME_EXCEEDED) {
-	struct iphdr *inner_ip = (struct iphdr *)(buffer + (ip->ihl * 4) + 8);
-	struct icmphdr *inner_icmp = (struct icmphdr *)((char *)inner_ip + (inner_ip->ihl * 4));
-
-	if (ntohs(inner_icmp->un.echo.id) == tr->pid) {
-	    res->got_reply = true;
-	    res->type = icmp->type;
-	    res->code = icmp->code;
-	}
-    } else if (icmp->type == ICMP_DEST_UNREACH) {
-	struct iphdr *inner_ip = (struct iphdr *)(buffer + (ip->ihl * 4) + 8);
-	struct icmphdr *inner_icmp = (struct icmphdr *)((char *)inner_ip + (inner_ip->ihl * 4));
-
-	if (ntohs(inner_icmp->un.echo.id) == tr->pid) {
-	    res->got_reply = true;
-	    res->type = icmp->type;
-	    res->code = icmp->code;
-	}
-    }
-
-    if (res->got_reply) {
-	resolve_info(tr, &from, res);
     }
 }

@@ -57,7 +57,7 @@ int create_socket(t_traceroute *tr);
 void run_traceroute(t_traceroute *tr);
 int parse_args(int argc, char **argv, t_traceroute *tr);
 void send_icmp_packet(t_traceroute *tr, int seq);
-void receive_packet(t_traceroute *tr, t_probe_result *res);
+void receive_packet(t_traceroute *tr, t_probe_result *res, int expected_seq);
 
 uint16_t calculate_checksum(void *addr, int len);
 double get_time_now(void);
