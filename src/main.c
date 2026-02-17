@@ -10,8 +10,7 @@ void init_traceroute(t_traceroute *tr, char *host)
     tr->probes_per_hop = 3;
 }
 
-#include "ft_traceroute.h"
-
+//TODO: REFACTO ALL and flag -m -q -n plus secu
 int main(int argc, char **argv)
 {
     t_traceroute tr;

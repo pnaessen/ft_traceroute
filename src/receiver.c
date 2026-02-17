@@ -3,8 +3,9 @@
 static void resolve_reverse_dns(struct sockaddr_in *addr, char *hostname)
 {
     if (getnameinfo((struct sockaddr *)addr, sizeof(*addr), hostname, NI_MAXHOST, NULL, 0,
-		    NI_NUMERICHOST) != 0)
+		    0) != 0) {
 	strncpy(hostname, inet_ntoa(addr->sin_addr), NI_MAXHOST);
+    }
 }
 
 t_response receive_packet(t_traceroute *tr)
