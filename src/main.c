@@ -38,12 +38,11 @@ int main(int argc, char **argv)
 	    break;
 	}
 
-	// int reached = send_probes(&tr, ttl);
+	int reached = send_probes(&tr);
 
-	// printf("\n");
-	// if (reached)
-	//     break; //  ICMP_ECHOREPLY
 	printf("\n");
+	if (reached)
+	    break;
     }
 
     close(tr.sockfd);

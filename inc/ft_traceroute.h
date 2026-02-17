@@ -54,5 +54,6 @@ int setup_socket(t_traceroute *tr);
 uint16_t calculate_checksum(void *addr, int len);
 t_response receive_packet(t_traceroute *tr);
 void send_icmp_packet(t_traceroute *tr, int seq);
+int send_probes(t_traceroute *tr);
 
 #endif
