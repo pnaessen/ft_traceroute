@@ -2,7 +2,7 @@
 
 void send_icmp_packet(t_traceroute *tr, int seq)
 {
-    char packet[40];
+    char packet[64];
     struct icmphdr *icmp;
 
     memset(packet, 0, sizeof(packet));
@@ -13,13 +13,13 @@ void send_icmp_packet(t_traceroute *tr, int seq)
     icmp->un.echo.id = htons(tr->pid);
     icmp->un.echo.sequence = htons(seq);
 
-    memset(packet + sizeof(struct icmphdr), 'F', 32);
+    memset(packet + sizeof(struct icmphdr), 0, sizeof(packet) - sizeof(struct icmphdr));
 
     icmp->checksum = 0;
     icmp->checksum = calculate_checksum((unsigned short *)packet, sizeof(packet));
 
     if (sendto(tr->sockfd, packet, sizeof(packet), 0, (struct sockaddr *)&tr->dest_addr,
 	       sizeof(tr->dest_addr)) <= 0) {
-	perror("sendto");
+	// perror("sendto");
     }
 }

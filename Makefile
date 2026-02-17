@@ -8,12 +8,13 @@ OBJ_DIR     = obj
 INC_DIR     = inc
 
 SRC_FILES   = main.c \
-			  network_factory.c \
+			  socket.c \
 			  dns.c \
-			  request.c \
+			  icmp.c \
 			  receiver.c \
 			  probes.c \
 			  utils.c \
+			  parsing.c \
 
 
 OBJ_FILES   = $(SRC_FILES:%.c=$(OBJ_DIR)/%.o)

@@ -1,53 +1,70 @@
 #include "ft_traceroute.h"
 
-static void resolve_reverse_dns(struct sockaddr_in *addr, char *hostname)
+static void resolve_info(t_traceroute *tr, struct sockaddr_in *addr, t_probe_result *res)
 {
-    if (getnameinfo((struct sockaddr *)addr, sizeof(*addr), hostname, NI_MAXHOST, NULL, 0,
-		    0) != 0) {
-	strncpy(hostname, inet_ntoa(addr->sin_addr), NI_MAXHOST);
+    if (inet_ntop(AF_INET, &addr->sin_addr, res->ip, INET_ADDRSTRLEN) == NULL) {
+	strncpy(res->ip, "?", INET_ADDRSTRLEN);
+    }
+
+    if (tr->resolve_dns) {
+	if (getnameinfo((struct sockaddr *)addr, sizeof(*addr), res->hostname, NI_MAXHOST, NULL, 0,
+			0) != 0) {
+	    strncpy(res->hostname, res->ip, NI_MAXHOST);
+	}
+    } else {
+	strncpy(res->hostname, res->ip, NI_MAXHOST);
     }
 }
 
-t_response receive_packet(t_traceroute *tr)
+void receive_packet(t_traceroute *tr, t_probe_result *res)
 {
-    t_response res;
     char buffer[512];
     struct sockaddr_in from;
     socklen_t from_len = sizeof(from);
+    ssize_t ret;
+    struct iphdr *ip;
+    struct icmphdr *icmp;
 
-    memset(&res, 0, sizeof(res));
+    res->got_reply = false;
 
-    ssize_t ret =
-	recvfrom(tr->sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)&from, &from_len);
-    if (ret < 0)
-	return res;
+    ret = recvfrom(tr->sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)&from, &from_len);
 
-    struct iphdr *ip = (struct iphdr *)buffer;
-    struct icmphdr *icmp = (struct icmphdr *)(buffer + (ip->ihl * 4));
+    if (ret < 0) {
+	return;
+    }
 
-    res.type = icmp->type;
-    res.code = icmp->code;
-    res.got_reply = 0;
+    ip = (struct iphdr *)buffer;
+    icmp = (struct icmphdr *)(buffer + (ip->ihl * 4));
 
-    if (res.type == ICMP_ECHOREPLY) {
-	if (ntohs(icmp->un.echo.id) == tr->pid) {
-	    res.got_reply = 1;
-	    res.seq = ntohs(icmp->un.echo.sequence);
+    if (icmp->type == ICMP_ECHOREPLY) {
+	if (ntohs(icmp->un.echo.id) == tr->pid && ntohs(icmp->un.echo.sequence) == res->code) {
+	    if (ntohs(icmp->un.echo.id) == tr->pid) {
+		res->got_reply = true;
+		res->type = icmp->type;
+		res->code = icmp->code;
+	    }
 	}
-    } else if (res.type == ICMP_TIME_EXCEEDED) {
-	struct icmphdr *inner_icmp =
-	    (struct icmphdr *)(buffer + (ip->ihl * 4) + 8 + sizeof(struct iphdr));
+    } else if (icmp->type == ICMP_TIME_EXCEEDED) {
+	struct iphdr *inner_ip = (struct iphdr *)(buffer + (ip->ihl * 4) + 8);
+	struct icmphdr *inner_icmp = (struct icmphdr *)((char *)inner_ip + (inner_ip->ihl * 4));
 
 	if (ntohs(inner_icmp->un.echo.id) == tr->pid) {
-	    res.got_reply = 1;
-	    res.seq = ntohs(inner_icmp->un.echo.sequence);
+	    res->got_reply = true;
+	    res->type = icmp->type;
+	    res->code = icmp->code;
+	}
+    } else if (icmp->type == ICMP_DEST_UNREACH) {
+	struct iphdr *inner_ip = (struct iphdr *)(buffer + (ip->ihl * 4) + 8);
+	struct icmphdr *inner_icmp = (struct icmphdr *)((char *)inner_ip + (inner_ip->ihl * 4));
+
+	if (ntohs(inner_icmp->un.echo.id) == tr->pid) {
+	    res->got_reply = true;
+	    res->type = icmp->type;
+	    res->code = icmp->code;
 	}
     }
 
-    if (res.got_reply) {
-	strncpy(res.ip_str, inet_ntoa(from.sin_addr), INET_ADDRSTRLEN);
-	resolve_reverse_dns(&from, res.hostname);
+    if (res->got_reply) {
+	resolve_info(tr, &from, res);
     }
-
-    return res;
 }
