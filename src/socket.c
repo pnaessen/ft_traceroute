@@ -1,6 +1,6 @@
 #include "ft_traceroute.h"
 
-int setup_socket(t_traceroute *tr)
+int create_socket(t_traceroute *tr)
 {
     struct timeval tv = {1, 0};
 
