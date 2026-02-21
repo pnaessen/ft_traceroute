@@ -28,7 +28,8 @@ void receive_packet(t_traceroute *tr, t_probe_result *res, int expected_seq)
     res->got_reply = false;
 
     while (true) {
-	ret = recvfrom(tr->sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)&from, &from_len);
+	ret =
+	    recvfrom(tr->recv_sock, buffer, sizeof(buffer), 0, (struct sockaddr *)&from, &from_len);
 
 	if (ret < 0)
 	    return;
@@ -47,15 +48,31 @@ void receive_packet(t_traceroute *tr, t_probe_result *res, int expected_seq)
 	    }
 	} else if (icmp->type == ICMP_TIME_EXCEEDED || icmp->type == ICMP_DEST_UNREACH) {
 	    struct iphdr *inner_ip = (struct iphdr *)(buffer + (ip->ihl * 4) + 8);
-	    struct icmphdr *inner_icmp = (struct icmphdr *)((char *)inner_ip + (inner_ip->ihl * 4));
+	    int inner_ip_hlen = inner_ip->ihl * 4;
 
-	    if (ntohs(inner_icmp->un.echo.id) == tr->pid &&
-		ntohs(inner_icmp->un.echo.sequence) == expected_seq) {
-		res->got_reply = true;
-		res->type = icmp->type;
-		res->code = icmp->code;
-		resolve_info(tr, &from, res);
-		return;
+	    if (tr->use_icmp && inner_ip->protocol == IPPROTO_ICMP) {
+		struct icmphdr *inner_icmp = (struct icmphdr *)((char *)inner_ip + inner_ip_hlen);
+
+		if (ntohs(inner_icmp->un.echo.id) == tr->pid &&
+		    ntohs(inner_icmp->un.echo.sequence) == expected_seq) {
+
+		    res->got_reply = true;
+		    res->type = icmp->type;
+		    res->code = icmp->code;
+		    resolve_info(tr, &from, res);
+		    return;
+		}
+	    } else if (!tr->use_icmp && inner_ip->protocol == IPPROTO_UDP) {
+		uint16_t *inner_udp_ports = (uint16_t *)((char *)inner_ip + inner_ip_hlen);
+		uint16_t inner_dst_port = ntohs(inner_udp_ports[1]);
+
+		if (inner_dst_port == (tr->port_base + expected_seq)) {
+		    res->got_reply = true;
+		    res->type = icmp->type;
+		    res->code = icmp->code;
+		    resolve_info(tr, &from, res);
+		    return;
+		}
 	    }
 	}
     }

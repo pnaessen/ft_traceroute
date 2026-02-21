@@ -15,6 +15,7 @@ SRC_FILES   = main.c \
 			  probes.c \
 			  utils.c \
 			  parsing.c \
+			  udp.c \
 
 
 OBJ_FILES   = $(SRC_FILES:%.c=$(OBJ_DIR)/%.o)

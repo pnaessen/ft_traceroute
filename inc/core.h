@@ -9,5 +9,6 @@ int create_socket(t_traceroute *tr);
 void run_traceroute(t_traceroute *tr);
 void send_icmp_packet(t_traceroute *tr, int seq);
 void receive_packet(t_traceroute *tr, t_probe_result *res, int expected_seq);
+void send_udp_packet(t_traceroute *tr, int seq);
 
 #endif

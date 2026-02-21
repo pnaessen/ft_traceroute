@@ -42,11 +42,13 @@ typedef struct s_traceroute {
     int max_hops;
     int probes_per_hop;
     bool resolve_dns;
-
+    bool use_icmp;
     struct sockaddr_in dest_addr;
-    int sockfd;
+    int send_sock;
+    int recv_sock;
     uint16_t pid;
     uint16_t port_base;
+
 } t_traceroute;
 
 #endif

@@ -9,7 +9,10 @@ static t_probe_result perform_one_probe(t_traceroute *tr, int seq)
 
     start_time = get_time_now();
 
-    send_icmp_packet(tr, seq);
+    if (tr->use_icmp)
+	send_icmp_packet(tr, seq);
+    else
+	send_udp_packet(tr, seq);
 
     receive_packet(tr, &result, seq);
 
@@ -47,7 +50,7 @@ static bool run_hop(t_traceroute *tr, int ttl)
     char last_ip_on_line[INET_ADDRSTRLEN] = {0};
     static int global_seq = 1;
 
-    if (setsockopt(tr->sockfd, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl)) < 0) {
+    if (setsockopt(tr->send_sock, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl)) < 0) {
 	perror("setsockopt ttl");
 	return false;
     }
