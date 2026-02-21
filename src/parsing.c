@@ -45,7 +45,7 @@ int parse_args(int argc, char **argv, t_traceroute *tr)
 	{"max-hops", required_argument, 0, 'm'}, {"no-dns", no_argument, 0, 'n'},
 	{"queries", required_argument, 0, 'q'},	 {0, 0, 0, 0}};
 
-    while ((opt = getopt_long(argc, argv, "hm:nq:", long_options, &option_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "Ihm:nq:", long_options, &option_index)) != -1) {
 	switch (opt) {
 	case 'h':
 	    print_usage(argv[0]);
