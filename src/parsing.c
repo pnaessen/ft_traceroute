@@ -8,6 +8,8 @@ static void print_usage(const char *prog_name)
     fprintf(stderr, "  -h, --help        Display this help and exit\n");
     fprintf(stderr, "  -m, --max-hops N  Set the max number of hops (default: %d, max: 255)\n",
 	    DEF_MAX_HOPS);
+    fprintf(stderr, "  -p, --port N      Set the base destination port for UDP (default: %d)\n",
+	    DEF_PORT);
     fprintf(stderr, "  -n, --no-dns      Do not resolve IP addresses to their domain names\n");
     fprintf(stderr, "  -q, --queries N   Set the number of probes per hop (default: %d, max: 10)\n",
 	    DEF_PROBES_PER_HOP);
@@ -40,12 +42,15 @@ int parse_args(int argc, char **argv, t_traceroute *tr)
     int option_index = 0;
     int val;
 
-    static struct option long_options[] = {
-	{"help", no_argument, 0, 'h'},		 {"icmp", no_argument, 0, 'I'},
-	{"max-hops", required_argument, 0, 'm'}, {"no-dns", no_argument, 0, 'n'},
-	{"queries", required_argument, 0, 'q'},	 {0, 0, 0, 0}};
+    static struct option long_options[] = {{"help", no_argument, 0, 'h'},
+					   {"icmp", no_argument, 0, 'I'},
+					   {"max-hops", required_argument, 0, 'm'},
+					   {"port", required_argument, 0, 'p'},
+					   {"no-dns", no_argument, 0, 'n'},
+					   {"queries", required_argument, 0, 'q'},
+					   {0, 0, 0, 0}};
 
-    while ((opt = getopt_long(argc, argv, "Ihm:nq:", long_options, &option_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "p:Ihm:nq:", long_options, &option_index)) != -1) {
 	switch (opt) {
 	case 'h':
 	    print_usage(argv[0]);
@@ -63,7 +68,14 @@ int parse_args(int argc, char **argv, t_traceroute *tr)
 	    }
 	    tr->max_hops = val;
 	    break;
-
+	case 'p':
+	    val = get_positive_int(optarg, 1, 65535);
+	    if (val == -1) {
+		fprintf(stderr, "Error: invalid port (must be between 1 and 65535)\n");
+		return EXIT_FAILURE;
+	    }
+	    tr->port_base = val;
+	    break;
 	case 'I':
 	    tr->use_icmp = true;
 	    break;
