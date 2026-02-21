@@ -6,6 +6,8 @@ static void set_defaults(t_traceroute *tr)
     tr->max_hops = DEF_MAX_HOPS;
     tr->probes_per_hop = DEF_PROBES_PER_HOP;
     tr->resolve_dns = true;
+    tr->use_icmp = false;
+    tr->port_base = DEF_PORT;
     tr->pid = getpid() & 0xFFFF;
 }
 
@@ -38,6 +40,7 @@ int main(int argc, char **argv)
 
     run_traceroute(&tr);
 
-    close(tr.sockfd);
+    close(tr.recv_sock);
+    close(tr.send_sock);
     return (EXIT_SUCCESS);
 }
