@@ -14,8 +14,7 @@ static t_probe_result perform_one_probe(t_traceroute *tr, int seq)
     else
 	send_udp_packet(tr, seq);
 
-    receive_packet(tr, &result, seq);
-
+    receive_packet(tr, &result, seq, start_time);
     if (result.got_reply) {
 	result.rtt = (get_time_now() - start_time) * 1000.0;
 	if (result.type == ICMP_ECHOREPLY || result.type == ICMP_DEST_UNREACH)

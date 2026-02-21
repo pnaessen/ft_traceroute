@@ -16,7 +16,7 @@ static void resolve_info(t_traceroute *tr, struct sockaddr_in *addr, t_probe_res
     }
 }
 
-void receive_packet(t_traceroute *tr, t_probe_result *res, int expected_seq)
+void receive_packet(t_traceroute *tr, t_probe_result *res, int expected_seq, double start_time)
 {
     char buffer[512];
     struct sockaddr_in from;
@@ -25,9 +25,37 @@ void receive_packet(t_traceroute *tr, t_probe_result *res, int expected_seq)
     struct iphdr *ip;
     struct icmphdr *icmp;
 
+    fd_set readfds;
+
+    struct timeval tv;
+
+    double timeout_sec = 1.0;
     res->got_reply = false;
 
     while (true) {
+	double elapsed = get_time_now() - start_time;
+	if (elapsed >= timeout_sec) {
+	    return;
+	}
+
+	double remaining = timeout_sec - elapsed;
+	tv.tv_sec = (time_t)remaining;
+	tv.tv_usec = (suseconds_t)((remaining - tv.tv_sec) * 1000000.0);
+
+	FD_ZERO(&readfds);
+	FD_SET(tr->recv_sock, &readfds);
+
+	int ready = select(tr->recv_sock + 1, &readfds, NULL, NULL, &tv);
+
+	if (ready < 0) {
+	    if (errno == EINTR)
+		continue;
+	    perror("select");
+	    return;
+	} else if (ready == 0) {
+	    return;
+	}
+
 	ret =
 	    recvfrom(tr->recv_sock, buffer, sizeof(buffer), 0, (struct sockaddr *)&from, &from_len);
 
