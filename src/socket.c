@@ -4,7 +4,11 @@ int create_socket(t_traceroute *tr)
 {
     tr->recv_sock = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
     if (tr->recv_sock < 0) {
-	perror("socket recv");
+	if (errno == EPERM || errno == EACCES) {
+	    fprintf(stderr, "ft_traceroute: root privileges required.\n");
+	} else {
+	    perror("socket recv");
+	}
 	return -1;
     }
 
@@ -14,6 +18,7 @@ int create_socket(t_traceroute *tr)
 	tr->send_sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (tr->send_sock < 0) {
 	    perror("socket send");
+	    close(tr->recv_sock);
 	    return -1;
 	}
     }
