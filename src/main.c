@@ -15,11 +15,6 @@ int main(int argc, char **argv)
 {
     t_traceroute tr;
 
-    if (geteuid() != 0) {
-	fprintf(stderr, "ft_traceroute: root privileges required.\n");
-	return (EXIT_FAILURE);
-    }
-
     set_defaults(&tr);
     if (parse_args(argc, argv, &tr) != EXIT_SUCCESS) {
 	return (EXIT_FAILURE);
@@ -41,6 +36,7 @@ int main(int argc, char **argv)
     run_traceroute(&tr);
 
     close(tr.recv_sock);
-    close(tr.send_sock);
+    if (!tr.use_icmp)
+	close(tr.send_sock);
     return (EXIT_SUCCESS);
 }

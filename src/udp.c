@@ -5,13 +5,12 @@ void send_udp_packet(t_traceroute *tr, int seq)
     char packet[32];
     struct sockaddr_in dest;
 
-    memset(packet, 0x42, sizeof(packet)); //Paylod random
+    memset(packet, 0x42, sizeof(packet));
 
     dest = tr->dest_addr;
-    dest.sin_port = htons(tr->port_base + seq);
+    dest.sin_port = htons(tr->port_base + seq - 1);
 
-    if (sendto(tr->send_sock, packet, sizeof(packet), 0, (struct sockaddr *)&dest, sizeof(dest)) <=
-	0) {
-		perror("sendto");
+    if (sendto(tr->send_sock, packet, sizeof(packet), 0, (struct sockaddr *)&dest, sizeof(dest)) <= 0) {
+	perror("sendto");
     }
 }
