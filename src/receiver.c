@@ -2,14 +2,23 @@
 
 static void resolve_info(t_traceroute *tr, struct sockaddr_in *addr, t_probe_result *res)
 {
+    static char cached_ip[INET_ADDRSTRLEN] = {0};
+    static char cached_host[NI_MAXHOST] = {0};
+
     if (inet_ntop(AF_INET, &addr->sin_addr, res->ip, INET_ADDRSTRLEN) == NULL) {
 	strncpy(res->ip, "?", INET_ADDRSTRLEN);
     }
 
     if (tr->resolve_dns) {
-	if (getnameinfo((struct sockaddr *)addr, sizeof(*addr), res->hostname, NI_MAXHOST, NULL, 0,
-			0) != 0) {
-	    strncpy(res->hostname, res->ip, NI_MAXHOST);
+	if (cached_ip[0] != '\0' && strcmp(cached_ip, res->ip) == 0) {
+	    strncpy(res->hostname, cached_host, NI_MAXHOST);
+	} else {
+	    if (getnameinfo((struct sockaddr *)addr, sizeof(*addr), res->hostname, NI_MAXHOST, NULL, 0,
+			    0) != 0) {
+		strncpy(res->hostname, res->ip, NI_MAXHOST);
+	    }
+	    strncpy(cached_ip, res->ip, INET_ADDRSTRLEN);
+	    strncpy(cached_host, res->hostname, NI_MAXHOST);
 	}
     } else {
 	strncpy(res->hostname, res->ip, NI_MAXHOST);
