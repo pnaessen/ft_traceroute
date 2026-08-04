@@ -13,6 +13,8 @@ static void print_usage(const char *prog_name)
     fprintf(stderr, "  -n, --no-dns      Do not resolve IP addresses to their domain names\n");
     fprintf(stderr, "  -q, --queries N   Set the number of probes per hop (default: %d, max: 10)\n",
 	    DEF_PROBES_PER_HOP);
+    fprintf(stderr, "  -w, --wait N      Set the wait time for a response in seconds (default: %.1f)\n",
+	    DEF_TIMEOUT);
     fprintf(stderr, "  -I, --icmp        Use ICMP ECHO for probes\n");
 }
 
@@ -36,11 +38,32 @@ static int get_positive_int(const char *str, int min, int max)
     return (int)val;
 }
 
+static double get_positive_double(const char *str, double min, double max)
+{
+    char *endptr;
+    double val;
+
+    errno = 0;
+    val = strtod(str, &endptr);
+
+    if ((errno == ERANGE && val == HUGE_VAL) || (errno != 0 && val == 0) ||
+	endptr == str || *endptr != '\0') {
+	return -1.0;
+    }
+
+    if (val < min || val > max) {
+	return -1.0;
+    }
+
+    return val;
+}
+
 int parse_args(int argc, char **argv, t_traceroute *tr)
 {
     int opt;
     int option_index = 0;
     int val;
+    double dval;
 
     static struct option long_options[] = {{"help", no_argument, 0, 'h'},
 					   {"icmp", no_argument, 0, 'I'},
@@ -48,9 +71,10 @@ int parse_args(int argc, char **argv, t_traceroute *tr)
 					   {"port", required_argument, 0, 'p'},
 					   {"no-dns", no_argument, 0, 'n'},
 					   {"queries", required_argument, 0, 'q'},
+					   {"wait", required_argument, 0, 'w'},
 					   {0, 0, 0, 0}};
 
-    while ((opt = getopt_long(argc, argv, "p:Ihm:nq:", long_options, &option_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "p:Ihm:nq:w:", long_options, &option_index)) != -1) {
 	switch (opt) {
 	case 'h':
 	    print_usage(argv[0]);
@@ -86,6 +110,14 @@ int parse_args(int argc, char **argv, t_traceroute *tr)
 		return EXIT_FAILURE;
 	    }
 	    tr->probes_per_hop = val;
+	    break;
+	case 'w':
+	    dval = get_positive_double(optarg, 0.1, 60.0);
+	    if (dval < 0.0) {
+		fprintf(stderr, "Error: invalid wait time (must be between 0.1 and 60.0)\n");
+		return EXIT_FAILURE;
+	    }
+	    tr->timeout = dval;
 	    break;
 
 	case '?':

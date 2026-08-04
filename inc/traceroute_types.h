@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <float.h>
 #include <limits.h>
+#include <math.h>
 #include <netdb.h>
 #include <netinet/ip_icmp.h>
 #include <stdbool.h>
@@ -19,6 +20,7 @@
 #define DEF_MAX_HOPS 30
 #define DEF_PROBES_PER_HOP 3
 #define DEF_PORT 33434
+#define DEF_TIMEOUT 5.0
 
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE 1
@@ -41,6 +43,7 @@ typedef struct s_traceroute {
     char *target;
     int max_hops;
     int probes_per_hop;
+    double timeout;
     bool resolve_dns;
     bool use_icmp;
     struct sockaddr_in dest_addr;

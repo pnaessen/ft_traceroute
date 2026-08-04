@@ -1,23 +1,15 @@
 #include "ft_traceroute.h"
 
-static void print_probe_result(t_probe_result *res, char *last_ip, bool resolve_dns, bool is_first_probe)
+static void print_probe_result(t_probe_result *res, char *last_ip, bool resolve_dns)
 {
     if (!res->got_reply) {
-	if (is_first_probe) {
-	    printf(" *");
-	} else {
-	    printf("  *");
-	}
+	printf(" *");
+	last_ip[0] = '\0';
 	return;
     }
 
     if (strncmp(res->ip, last_ip, INET_ADDRSTRLEN) != 0) {
-	if (is_first_probe) {
-	    printf(" ");
-	} else {
-	    printf("  ");
-	}
-
+	printf(" ");
 	if (resolve_dns) {
 	    printf("%s (%s)", res->hostname, res->ip);
 	} else {
@@ -51,9 +43,9 @@ static bool run_hop(t_traceroute *tr, int ttl)
 	    send_udp_packet(tr, seq);
 
 	t_probe_result res;
-	receive_single_packet(tr, seq, 3.0, &res);
+	receive_single_packet(tr, seq, tr->timeout, &res);
 
-	print_probe_result(&res, last_ip_on_line, tr->resolve_dns, (i == 0));
+	print_probe_result(&res, last_ip_on_line, tr->resolve_dns);
 	fflush(stdout);
 
 	if (res.is_final)

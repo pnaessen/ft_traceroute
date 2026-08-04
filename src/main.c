@@ -5,6 +5,7 @@ static void set_defaults(t_traceroute *tr)
     memset(tr, 0, sizeof(t_traceroute));
     tr->max_hops = DEF_MAX_HOPS;
     tr->probes_per_hop = DEF_PROBES_PER_HOP;
+    tr->timeout = DEF_TIMEOUT;
     tr->resolve_dns = true;
     tr->use_icmp = false;
     tr->port_base = DEF_PORT;
