@@ -4,7 +4,6 @@ static void print_probe_result(t_probe_result *res, char *last_ip, bool resolve_
 {
     if (!res->got_reply) {
 	printf(" *");
-	last_ip[0] = '\0';
 	return;
     }
 
@@ -32,7 +31,7 @@ static bool run_hop(t_traceroute *tr, int ttl)
 	return false;
     }
 
-    printf("%2d ", ttl);
+    printf("%2d", ttl);
     fflush(stdout);
 
     for (int i = 0; i < tr->probes_per_hop; i++) {
@@ -42,8 +41,21 @@ static bool run_hop(t_traceroute *tr, int ttl)
 	else
 	    send_udp_packet(tr, seq);
 
+	double effective_timeout = tr->timeout;
+	if (tr->last_rtt_sec > 0.0) {
+	    double adaptive = tr->last_rtt_sec * 10.0;
+	    if (adaptive < 0.1)
+		adaptive = 0.1;
+	    if (adaptive < effective_timeout)
+		effective_timeout = adaptive;
+	}
+
 	t_probe_result res;
-	receive_single_packet(tr, seq, tr->timeout, &res);
+	receive_single_packet(tr, seq, effective_timeout, &res);
+
+	if (res.got_reply) {
+	    tr->last_rtt_sec = res.rtt / 1000.0;
+	}
 
 	print_probe_result(&res, last_ip_on_line, tr->resolve_dns);
 	fflush(stdout);

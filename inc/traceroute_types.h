@@ -51,7 +51,7 @@ typedef struct s_traceroute {
     int recv_sock;
     uint16_t pid;
     uint16_t port_base;
-
+    double last_rtt_sec;
 } t_traceroute;
 
 #endif
