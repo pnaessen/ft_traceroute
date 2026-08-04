@@ -59,6 +59,8 @@ bool receive_single_packet(t_traceroute *tr, int target_seq, double timeout_sec,
 	    continue;
 
 	struct iphdr *ip = (struct iphdr *)buffer;
+	if (ip->ihl < 5)
+	    continue;
 	int ip_hlen = ip->ihl * 4;
 
 	if (ret < ip_hlen + (ssize_t)sizeof(struct icmphdr))
@@ -78,21 +80,27 @@ bool receive_single_packet(t_traceroute *tr, int target_seq, double timeout_sec,
 	} else if (type == ICMP_TIME_EXCEEDED || type == ICMP_DEST_UNREACH) {
 	    if (ret >= ip_hlen + 8 + (ssize_t)sizeof(struct iphdr)) {
 		struct iphdr *inner_ip = (struct iphdr *)(buffer + ip_hlen + 8);
-		int inner_ip_hlen = inner_ip->ihl * 4;
+		if (inner_ip->ihl >= 5) {
+		    int inner_ip_hlen = inner_ip->ihl * 4;
 
-		if (inner_ip->daddr == tr->dest_addr.sin_addr.s_addr) {
-		    if (tr->use_icmp && inner_ip->protocol == IPPROTO_ICMP) {
-			if (ret >= ip_hlen + 8 + inner_ip_hlen + (ssize_t)sizeof(struct icmphdr)) {
-			    struct icmphdr *inner_icmp = (struct icmphdr *)((char *)inner_ip + inner_ip_hlen);
-			    if (ntohs(inner_icmp->un.echo.id) == tr->pid) {
-				recv_seq = ntohs(inner_icmp->un.echo.sequence);
+		    if (inner_ip->daddr == tr->dest_addr.sin_addr.s_addr) {
+			if (tr->use_icmp && inner_ip->protocol == IPPROTO_ICMP) {
+			    if (ret >= ip_hlen + 8 + inner_ip_hlen + (ssize_t)sizeof(struct icmphdr)) {
+				struct icmphdr *inner_icmp = (struct icmphdr *)((char *)inner_ip + inner_ip_hlen);
+				if (ntohs(inner_icmp->un.echo.id) == tr->pid) {
+				    recv_seq = ntohs(inner_icmp->un.echo.sequence);
+				}
 			    }
-			}
-		    } else if (!tr->use_icmp && inner_ip->protocol == IPPROTO_UDP) {
-			if (ret >= ip_hlen + 8 + inner_ip_hlen + 4) {
-			    uint16_t *inner_udp_ports = (uint16_t *)((char *)inner_ip + inner_ip_hlen);
-			    uint16_t inner_dst_port = ntohs(inner_udp_ports[1]);
-			    recv_seq = (int)(inner_dst_port - tr->port_base) + 1;
+			} else if (!tr->use_icmp && inner_ip->protocol == IPPROTO_UDP) {
+			    if (ret >= ip_hlen + 8 + inner_ip_hlen + 4) {
+				uint16_t *inner_udp_ports = (uint16_t *)((char *)inner_ip + inner_ip_hlen);
+				uint16_t inner_dst_port = ntohs(inner_udp_ports[1]);
+				uint32_t expected_raw = (uint32_t)tr->port_base + target_seq - 1;
+				uint16_t expected_port = ((expected_raw - 1) % 65535) + 1;
+				if (inner_dst_port == expected_port) {
+				    recv_seq = target_seq;
+				}
+			    }
 			}
 		    }
 		}
