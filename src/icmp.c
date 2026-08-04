@@ -18,8 +18,6 @@ void send_icmp_packet(t_traceroute *tr, int seq)
     icmp->checksum = 0;
     icmp->checksum = calculate_checksum((unsigned short *)packet, sizeof(packet));
 
-    if (sendto(tr->send_sock, packet, sizeof(packet), 0, (struct sockaddr *)&tr->dest_addr,
-	       sizeof(tr->dest_addr)) <= 0) {
-	// perror("sendto");
-    }
+    (void)sendto(tr->send_sock, packet, sizeof(packet), 0, (struct sockaddr *)&tr->dest_addr,
+		sizeof(tr->dest_addr));
 }
