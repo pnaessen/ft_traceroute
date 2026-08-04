@@ -1,17 +1,27 @@
 #include "ft_traceroute.h"
 
-static void print_probe_result(t_probe_result *res, char *last_ip, bool resolve_dns)
+static void print_probe_result(t_probe_result *res, char *last_ip, bool resolve_dns, bool is_first_probe)
 {
     if (!res->got_reply) {
-	printf(" *");
+	if (is_first_probe) {
+	    printf(" *");
+	} else {
+	    printf("  *");
+	}
 	return;
     }
 
     if (strncmp(res->ip, last_ip, INET_ADDRSTRLEN) != 0) {
-	if (resolve_dns && res->hostname[0] != '\0') {
-	    printf(" %s (%s)", res->hostname, res->ip);
+	if (is_first_probe) {
+	    printf(" ");
 	} else {
-	    printf(" %s", res->ip);
+	    printf("  ");
+	}
+
+	if (resolve_dns) {
+	    printf("%s (%s)", res->hostname, res->ip);
+	} else {
+	    printf("%s", res->ip);
 	}
 	strncpy(last_ip, res->ip, INET_ADDRSTRLEN);
     }
@@ -21,7 +31,7 @@ static void print_probe_result(t_probe_result *res, char *last_ip, bool resolve_
 
 static bool run_hop(t_traceroute *tr, int ttl)
 {
-    int reached_dest = 0;
+    bool reached_dest = false;
     char last_ip_on_line[INET_ADDRSTRLEN] = {0};
     static int global_seq = 1;
 
@@ -31,33 +41,27 @@ static bool run_hop(t_traceroute *tr, int ttl)
     }
 
     printf("%2d ", ttl);
-
-    t_probe_result results[tr->probes_per_hop];
-    double start_times[tr->probes_per_hop];
-    int seqs[tr->probes_per_hop];
-
-    memset(results, 0, sizeof(results));
+    fflush(stdout);
 
     for (int i = 0; i < tr->probes_per_hop; i++) {
-	seqs[i] = global_seq++;
-	start_times[i] = get_time_now();
+	int seq = global_seq++;
 	if (tr->use_icmp)
-	    send_icmp_packet(tr, seqs[i]);
+	    send_icmp_packet(tr, seq);
 	else
-	    send_udp_packet(tr, seqs[i]);
-    }
+	    send_udp_packet(tr, seq);
 
-    receive_hop_packets(tr, results, seqs, start_times, tr->probes_per_hop);
+	t_probe_result res;
+	receive_single_packet(tr, seq, 3.0, &res);
 
-    for (int i = 0; i < tr->probes_per_hop; i++) {
-	print_probe_result(&results[i], last_ip_on_line, tr->resolve_dns);
-	if (results[i].is_final)
-	    reached_dest = 1;
-	//fflush(stdout);
+	print_probe_result(&res, last_ip_on_line, tr->resolve_dns, (i == 0));
+	fflush(stdout);
+
+	if (res.is_final)
+	    reached_dest = true;
     }
 
     printf("\n");
-    return (reached_dest == 1);
+    return reached_dest;
 }
 
 void run_traceroute(t_traceroute *tr)
