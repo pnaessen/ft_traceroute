@@ -21,19 +21,7 @@ uint16_t calculate_checksum(void *addr, int len)
     return (uint16_t)~sum;
 }
 
-double calculate_rtt(struct icmphdr *icmp)
-{
-    struct timeval end_time;
-    struct timeval *start_time;
-
-    gettimeofday(&end_time, NULL);
-    start_time = (struct timeval *)((char *)icmp + sizeof(struct icmphdr));
-
-    return ((end_time.tv_sec - start_time->tv_sec) * 1000.0) +
-	   ((end_time.tv_usec - start_time->tv_usec) / 1000.0);
-}
-
-double get_time_now()
+double get_time_now(void)
 {
     struct timeval tv;
     gettimeofday(&tv, NULL);

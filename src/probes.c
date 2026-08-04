@@ -43,9 +43,9 @@ static bool run_hop(t_traceroute *tr, int ttl)
 
 	double effective_timeout = tr->timeout;
 	if (tr->last_rtt_sec > 0.0) {
-	    double adaptive = tr->last_rtt_sec * 10.0;
-	    if (adaptive < 0.1)
-		adaptive = 0.1;
+	    double adaptive = tr->last_rtt_sec * 3.0;
+	    if (adaptive < 0.02)
+		adaptive = 0.02;
 	    if (adaptive < effective_timeout)
 		effective_timeout = adaptive;
 	}
