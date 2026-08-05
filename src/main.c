@@ -25,6 +25,11 @@ int main(int argc, char **argv)
 	return (EXIT_FAILURE);
     }
 
+    if (tr.max_hops < 1) {
+	fprintf(stderr, "first hop out of range\n");
+	return (2);
+    }
+
     if (create_socket(&tr) != EXIT_SUCCESS) {
 	return (EXIT_FAILURE);
     }

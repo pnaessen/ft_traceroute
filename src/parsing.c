@@ -85,9 +85,9 @@ int parse_args(int argc, char **argv, t_traceroute *tr)
 	    break;
 
 	case 'm':
-	    val = get_positive_int(optarg, 1, 255);
+	    val = get_positive_int(optarg, 0, 255);
 	    if (val == -1) {
-		fprintf(stderr, "Error: invalid max-hops (must be between 1 and 255)\n");
+		fprintf(stderr, "Error: invalid max-hops (must be between 0 and 255)\n");
 		return EXIT_FAILURE;
 	    }
 	    tr->max_hops = val;
@@ -112,9 +112,9 @@ int parse_args(int argc, char **argv, t_traceroute *tr)
 	    tr->probes_per_hop = val;
 	    break;
 	case 'w':
-	    dval = get_positive_double(optarg, 0.1, 60.0);
+	    dval = get_positive_double(optarg, 0.0, 60.0);
 	    if (dval < 0.0) {
-		fprintf(stderr, "Error: invalid wait time (must be between 0.1 and 60.0)\n");
+		fprintf(stderr, "Error: invalid wait time (must be between 0 and 60)\n");
 		return EXIT_FAILURE;
 	    }
 	    tr->timeout = dval;

@@ -33,15 +33,23 @@ bool receive_single_packet(t_traceroute *tr, int target_seq, double timeout_sec,
     struct timeval tv;
     double start_time = get_time_now();
 
+    bool poll_done = false;
+
     memset(res, 0, sizeof(t_probe_result));
 
     while (true) {
 	double elapsed = get_time_now() - start_time;
-	if (elapsed >= timeout_sec) {
+	if (timeout_sec == 0.0) {
+	    if (poll_done)
+		return false;
+	    poll_done = true;
+	} else if (elapsed >= timeout_sec) {
 	    return false;
 	}
 
 	double remaining = timeout_sec - elapsed;
+	if (remaining < 0.0)
+	    remaining = 0.0;
 	tv.tv_sec = (time_t)remaining;
 	tv.tv_usec = (suseconds_t)((remaining - tv.tv_sec) * 1000000.0);
 

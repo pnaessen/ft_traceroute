@@ -31,7 +31,7 @@ static bool run_hop(t_traceroute *tr, int ttl)
 	return false;
     }
 
-    printf("%2d", ttl);
+    printf("%2d ", ttl);
     fflush(stdout);
 
     for (int i = 0; i < tr->probes_per_hop; i++) {
@@ -42,7 +42,9 @@ static bool run_hop(t_traceroute *tr, int ttl)
 	    send_udp_packet(tr, seq);
 
 	double effective_timeout = tr->timeout;
-	if (tr->last_rtt_sec > 0.0) {
+	if (ttl == 1 && effective_timeout == 0.0) {
+	    effective_timeout = 3.0;
+	} else if (tr->last_rtt_sec > 0.0) {
 	    double adaptive = tr->last_rtt_sec * 3.0;
 	    if (adaptive < 0.02)
 		adaptive = 0.02;
